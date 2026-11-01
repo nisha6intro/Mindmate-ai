@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "memories": [
+    {
+      "id": "mem_mvxrqzog_571646d3fb",
+      "text": "Is there a healthy way to channel stress into motivation",
+      "createdAt": "2026-11-01T11:50:55.264Z",
+      "updatedAt": "2026-11-01T11:50:55.264Z",
+      "status": "active",
+      "source": "legacy",
+      "conversationId": null,
+      "count": 1,
+      "keywords": [
+        "stress"
+      ],
+      "resolvedAt": null,
+      "legacy": true
+    },
+    {
+      "id": "mem_mvxrqzol_2548635420",
+      "text": "i fear about my semester exam",
+      "createdAt": "2026-11-01T11:50:55.269Z",
+      "updatedAt": "2026-11-01T11:50:55.269Z",
+      "status": "active",
+      "source": "legacy",
+      "conversationId": null,
+      "count": 1,
+      "keywords": [
+        "exam",
+        "fear"
+      ],
+      "resolvedAt": null,
+      "legacy": true
+    }
+  ]
+}

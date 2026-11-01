@@ -1,0 +1,31 @@
+{
+  "name": "mindmate-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MindMate AI — a private, empathetic emotional wellness companion powered by Ollama. Vanilla JS + Express.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "import:legacy": "node scripts/import-legacy.js"
+  },
+  "engines": {
+    "node": ">=20.10"
+  },
+  "keywords": [
+    "mental-wellness",
+    "ollama",
+    "vanilla-javascript",
+    "express",
+    "chartjs"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^4.6.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "lucide": "^0.468.0"
+  }
+}

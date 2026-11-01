@@ -1,0 +1,9 @@
+{
+  "imports": [
+    {
+      "importedAt": "2026-11-01T11:50:55.218Z",
+      "sourceDir": "C:\\Users\\User\\AppData\\Local\\Temp\\opencode\\mindmate_extract\\mindmate_ai",
+      "note": "Original Python/Streamlit files were copied here for provenance. Working app data lives in the parent data folder."
+    }
+  ]
+}

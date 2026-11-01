@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="MindMate AI is a private, empathetic emotional wellness companion. Chat, track your mood, keep gentle self-care reminders, and reflect — powered by your local Ollama model." />
+  <meta name="theme-color" content="#7c3aed" />
+  <title>MindMate AI — Emotional Wellness Companion</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/responsive.css" />
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="brand-row">
+        <a class="brand" href="#/dashboard" aria-label="MindMate AI dashboard">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 40c-7.6 0-13.2-4.6-13.2-11.4 0-4.9 2.7-8 6.1-9.6-.7-4.9 2.5-8.9 7.1-8.9 4.7 0 7.9 4 7.2 8.9 3.4 1.6 6.1 4.7 6.1 9.6C37.2 35.4 31.6 40 24 40Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+              <path d="M24 13.5v24M18.6 20.4c2.4.2 4.2 1.5 5.4 3.7M29.4 20.4c-2.4.2-4.2 1.5-5.4 3.7M18.5 28.6c2.5-.2 4.4-1.3 5.5-3.2M29.5 28.6c-2.5-.2-4.4-1.3-5.5-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M24 9.5c1.9 0 3.5-1.6 3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="brand-copy">
+            <strong>MindMate<span class="brand-ai">AI</span></strong>
+            <small>Emotional wellness companion</small>
+          </span>
+        </a>
+        <button class="icon-btn sidebar-close" id="sidebarClose" aria-label="Close navigation"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="sidebar-scroll">
+        <nav class="sidebar-nav" aria-label="Sections">
+          <p class="nav-label">Workspace</p>
+          <a class="nav-link" href="#/dashboard" data-route="dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+          <a class="nav-link" href="#/chat" data-route="chat"><i data-lucide="message-circle"></i><span>Chat with MindMate</span><span class="nav-spark">✦</span></a>
+          <a class="nav-link" href="#/mood" data-route="mood"><i data-lucide="heart-pulse"></i><span>Mood tracker</span></a>
+          <a class="nav-link" href="#/selfcare" data-route="selfcare"><i data-lucide="sprout"></i><span>Self-care</span></a>
+
+          <p class="nav-label nav-label-spaced">Your space</p>
+          <a class="nav-link" href="#/history" data-route="history"><i data-lucide="history"></i><span>Conversation history</span></a>
+          <a class="nav-link" href="#/memories" data-route="memories"><i data-lucide="brain"></i><span>Emotional memories</span><span class="nav-count" id="navMemoryCount" hidden>0</span></a>
+          <a class="nav-link" href="#/settings" data-route="settings"><i data-lucide="settings"></i><span>Settings</span></a>
+        </nav>
+
+        <section class="sidebar-recent" aria-label="Recent conversations">
+          <div class="sidebar-recent-head">
+            <p class="nav-label">Recent chats</p>
+            <button class="icon-btn icon-btn-sm" id="sidebarNewChat" aria-label="Start a new conversation" title="New conversation"><i data-lucide="plus"></i></button>
+          </div>
+          <div id="sidebarConversations" class="sidebar-conversations">
+            <div class="sidebar-empty">No conversations yet. Your first chat will appear here.</div>
+          </div>
+          <a class="sidebar-all-link" href="#/history">View all history <i data-lucide="arrow-right"></i></a>
+        </section>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-profile" id="sidebarProfile" type="button">
+          <span class="avatar" id="sidebarAvatar">F</span>
+          <span class="sidebar-profile-copy"><strong id="sidebarName">Friend</strong><small>Personal workspace</small></span>
+          <i data-lucide="chevron-right"></i>
+        </button>
+        <button class="crisis-link" id="sidebarSupport" type="button"><i data-lucide="life-buoy"></i><span>Urgent support</span></button>
+        <p class="sidebar-note"><i data-lucide="lock"></i> Private &amp; stored on this device</p>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" hidden></div>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-menu" id="sidebarToggle" aria-label="Open navigation" aria-expanded="false"><i data-lucide="menu"></i></button>
+          <div class="topbar-titles">
+            <h1 id="pageTitle">Dashboard</h1>
+            <p id="pageSubtitle">A gentle place to check in with yourself.</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="status-pill" id="aiStatus" type="button" title="Checking AI connection">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="aiStatusText">Checking AI</span>
+          </button>
+          <button class="btn btn-primary btn-sm topbar-new" id="topbarNewChat" type="button"><i data-lucide="plus"></i><span>New chat</span></button>
+          <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle colour theme" title="Toggle theme"><i data-lucide="moon"></i></button>
+          <button class="icon-btn" id="urgentSupportBtn" type="button" aria-label="Get urgent support" title="Urgent support"><i data-lucide="life-buoy"></i></button>
+          <button class="avatar-btn" id="topbarProfile" type="button" aria-label="Open settings"><span id="topbarAvatar">F</span></button>
+        </div>
+      </header>
+
+      <main class="content" id="mainContent">
+        <!-- ───────────────────────── Dashboard ───────────────────────── -->
+        <section class="view" id="view-dashboard" data-view="dashboard" hidden>
+          <div class="hero-card">
+            <div class="hero-blob hero-blob-one" aria-hidden="true"></div>
+            <div class="hero-blob hero-blob-two" aria-hidden="true"></div>
+            <div class="hero-copy">
+              <p class="hero-eyebrow" id="dashboardGreeting">Good day</p>
+              <h2 id="dashboardHeadline">A quiet moment, just for you.</h2>
+              <p class="hero-text">How are you arriving today? You don't need the right words — MindMate is here to listen, reflect, and keep the thread of what matters to you.</p>
+              <div class="hero-actions">
+                <a class="btn btn-white" href="#/chat" id="heroTalkBtn"><i data-lucide="message-circle"></i> Talk to MindMate</a>
+                <button class="btn btn-hero-ghost" id="heroMoodBtn" type="button"><i data-lucide="heart"></i> Log today's mood</button>
+              </div>
+              <p class="hero-footnote"><i data-lucide="shield-check"></i> Private by design · Powered by your local Ollama model</p>
+            </div>
+            <div class="hero-mood">
+              <div class="hero-mood-orb" id="heroMoodOrb">😐</div>
+              <p class="hero-mood-label">Last check-in</p>
+              <strong id="heroMoodLabel">Not logged yet</strong>
+              <span id="heroMoodTime">A mood check-in helps MindMate meet you where you are.</span>
+              <a href="#/mood" class="hero-mood-link">Open mood tracker <i data-lucide="arrow-up-right"></i></a>
+            </div>
+          </div>
+
+          <div class="stat-grid" id="dashboardStats">
+            <article class="stat-card">
+              <span class="stat-icon mood"><i data-lucide="smile"></i></span>
+              <div><p class="stat-label">Current mood</p><strong class="stat-value" data-stat="mood">—</strong><span class="stat-note" data-stat="mood-note">No check-in yet</span></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon check"><i data-lucide="calendar-check"></i></span>
+              <div><p class="stat-label">Check-ins · 7 days</p><strong class="stat-value" data-stat="checkins">0</strong><span class="stat-note" data-stat="checkins-note">Small check-ins count</span></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon chat"><i data-lucide="messages-square"></i></span>
+              <div><p class="stat-label">Conversations</p><strong class="stat-value" data-stat="conversations">0</strong><span class="stat-note" data-stat="conversations-note">A space to be heard</span></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon memory"><i data-lucide="sparkles"></i></span>
+              <div><p class="stat-label">Active memories</p><strong class="stat-value" data-stat="memories">0</strong><span class="stat-note" data-stat="memories-note">Only what you choose to keep</span></div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="card chart-card dashboard-chart-card">
+              <header class="card-head">
+                <div><p class="card-kicker">Mood overview</p><h3>Your recent rhythm</h3></div>
+                <span class="soft-badge" id="dashboardTrendBadge"><i data-lucide="activity"></i> —</span>
+              </header>
+              <div class="chart-wrap chart-wrap-dashboard">
+                <canvas id="dashboardMoodChart" aria-label="Mood trend chart"></canvas>
+                <div class="chart-empty" id="dashboardChartEmpty" hidden>
+                  <span class="chart-empty-emoji">🌱</span>
+                  <p>Your mood pattern will appear here after your first check-in.</p>
+                  <a href="#/mood" class="text-link">Log a mood <i data-lucide="arrow-right"></i></a>
+                </div>
+              </div>
+              <p class="chart-insight" id="dashboardInsight">Log your first mood check-in to start seeing patterns over time.</p>
+            </article>
+
+            <article class="card quick-mood-card" id="quickMoodCard">
+              <header class="card-head">
+                <div><p class="card-kicker">Quick check-in</p><h3>How do you feel right now?</h3></div>
+                <a class="text-link" href="#/mood">Details <i data-lucide="arrow-up-right"></i></a>
+              </header>
+              <div class="quick-mood-options" id="quickMoodOptions" role="group" aria-label="Select your current mood"></div>
+              <button class="btn btn-primary btn-full" id="quickMoodSubmit" type="button" disabled><i data-lucide="check"></i> Save check-in</button>
+              <p class="fine-print">No explanation needed. You can always update it later.</p>
+            </article>
+
+            <article class="card recent-card">
+              <header class="card-head">
+                <div><p class="card-kicker">Pick up the thread</p><h3>Recent conversations</h3></div>
+                <a class="text-link" href="#/history">All chats <i data-lucide="arrow-right"></i></a>
+              </header>
+              <div class="recent-list" id="recentConversations"></div>
+            </article>
+
+            <article class="card care-card">
+              <div class="care-emoji" id="dashboardReminderEmoji">🌿</div>
+              <p class="card-kicker">Self-care reminder</p>
+              <h3 id="dashboardReminderText">A small act of care for future you.</h3>
+              <p class="care-caption" id="dashboardReminderCaption">Take a breath. You are doing more than you think.</p>
+              <button class="btn btn-soft btn-full" id="dashboardNewReminder" type="button"><i data-lucide="refresh-cw"></i> Give me a reminder</button>
+              <a class="text-link text-link-center" href="#/selfcare">Open self-care space <i data-lucide="arrow-right"></i></a>
+            </article>
+
+            <article class="card memory-snapshot-card">
+              <header class="card-head">
+                <div><p class="card-kicker">MindMate remembers</p><h3>What you've shared</h3></div>
+                <a class="text-link" href="#/memories">Manage <i data-lucide="arrow-right"></i></a>
+              </header>
+              <div id="dashboardMemories" class="memory-snapshot-list"></div>
+            </article>
+
+            <article class="card suggestions-card">
+              <header class="card-head">
+                <div><p class="card-kicker">A place to begin</p><h3>Suggested for you</h3></div>
+              </header>
+              <div id="dashboardSuggestions" class="suggestion-list"></div>
+            </article>
+          </div>
+
+          <div class="affirmation-strip">
+            <span class="affirmation-icon">✧</span>
+            <p id="dashboardAffirmation">You are allowed to take up space and take your time.</p>
+            <a href="#/chat" class="text-link">Talk it through <i data-lucide="arrow-right"></i></a>
+          </div>
+        </section>
+
+        <!-- ───────────────────────── Chat ───────────────────────── -->
+        <section class="view chat-view" id="view-chat" data-view="chat" hidden>
+          <div class="chat-layout">
+            <aside class="chat-rail card" id="chatRail" aria-label="Your conversations">
+              <header class="chat-rail-head">
+                <div><p class="card-kicker">Your space</p><h3>Conversations</h3></div>
+                <button class="icon-btn icon-btn-sm" id="chatRailNew" type="button" aria-label="New conversation" title="New conversation"><i data-lucide="plus"></i></button>
+              </header>
+              <label class="search-field chat-search">
+                <i data-lucide="search" aria-hidden="true"></i>
+                <input type="search" id="chatSearch" placeholder="Search chats..." autocomplete="off" aria-label="Search conversations" />
+              </label>
+              <div class="chat-rail-list" id="chatConversationList"></div>
+              <a class="chat-rail-footer" href="#/history"><i data-lucide="history"></i> Full conversation history</a>
+            </aside>
+
+            <div class="chat-panel card">
+              <header class="chat-header">
+                <div class="chat-title-wrap">
+                  <button class="icon-btn icon-btn-sm chat-rail-toggle" id="chatRailToggle" type="button" aria-label="Open conversation list"><i data-lucide="panel-left"></i></button>
+                  <div>
+                    <h2 id="chatTitle">New conversation</h2>
+                    <p id="chatSubtitle">A private space to say what is real.</p>
+                  </div>
+                </div>
+                <div class="chat-header-actions">
+                  <span class="mood-chip" id="chatMoodChip">😐 Neutral</span>
+                  <button class="icon-btn icon-btn-sm" id="chatNewBtn" type="button" aria-label="Start a new conversation" title="New conversation"><i data-lucide="plus"></i></button>
+                  <button class="icon-btn icon-btn-sm" id="chatClearBtn" type="button" aria-label="Clear this conversation" title="Clear messages"><i data-lucide="eraser"></i></button>
+                  <button class="icon-btn icon-btn-sm" id="chatDeleteBtn" type="button" aria-label="Delete this conversation" title="Delete conversation"><i data-lucide="trash-2"></i></button>
+                </div>
+              </header>
+
+              <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-label="Conversation">
+                <div class="chat-empty" id="chatEmpty">
+                  <div class="chat-empty-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M24 40c-7.6 0-13.2-4.6-13.2-11.4 0-4.9 2.7-8 6.1-9.6-.7-4.9 2.5-8.9 7.1-8.9 4.7 0 7.9 4 7.2 8.9 3.4 1.6 6.1 4.7 6.1 9.6C37.2 35.4 31.6 40 24 40Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+                      <path d="M24 13.5v24M18.6 20.4c2.4.2 4.2 1.5 5.4 3.7M29.4 20.4c-2.4.2-4.2 1.5-5.4 3.7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <h3>I'm here, and I'm listening.</h3>
+                  <p>Begin anywhere. A thought, a feeling, a small win, or something that has been sitting heavy. There is no right way to start.</p>
+                  <div class="starter-prompts" id="chatStarterPrompts">
+                    <button type="button" class="starter-chip" data-prompt="I feel overwhelmed today and I don't know where to start."><i data-lucide="cloud-rain"></i> I feel overwhelmed</button>
+                    <button type="button" class="starter-chip" data-prompt="I have been feeling anxious about something coming up. Can you help me settle?"><i data-lucide="wind"></i> I feel anxious</button>
+                    <button type="button" class="starter-chip" data-prompt="Something good happened today and I want to savour it."><i data-lucide="sun"></i> Something good happened</button>
+                    <button type="button" class="starter-chip" data-prompt="Can you ask me a gentle question to help me check in with myself?"><i data-lucide="sparkles"></i> Help me check in</button>
+                  </div>
+                  <p class="chat-empty-note"><i data-lucide="shield-check"></i> MindMate is a supportive companion, not a therapist or crisis service.</p>
+                </div>
+              </div>
+
+              <div class="chat-followup" id="chatFollowUp" hidden>
+                <span><i data-lucide="sparkles"></i> A gentle next thought</span>
+                <button type="button" id="chatFollowUpBtn"></button>
+              </div>
+
+              <form class="chat-composer" id="chatForm">
+                <div class="composer-box">
+                  <textarea id="chatInput" rows="1" maxlength="4000" placeholder="Share what's on your mind..." aria-label="Message MindMate" autocomplete="off"></textarea>
+                  <div class="composer-bar">
+                    <span class="composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
+                    <div class="composer-buttons">
+                      <button class="btn btn-ghost btn-sm" id="chatStopBtn" type="button" hidden><i data-lucide="square"></i> Stop</button>
+                      <button class="send-btn" id="chatSendBtn" type="submit" aria-label="Send message" disabled><i data-lucide="send"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              <p class="chat-disclaimer"><i data-lucide="heart-handshake"></i> MindMate offers emotional support, not medical advice. In an emergency, contact local emergency services.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ───────────────────────── Mood ───────────────────────── -->
+        <section class="view" id="view-mood" data-view="mood" hidden>
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Mood tracker</p>
+              <h2>How are you, really?</h2>
+              <p>Five gentle levels, no judgement. Logging a feeling can make it a little easier to hold.</p>
+            </div>
+            <span class="soft-badge" id="moodStreakBadge"><i data-lucide="flame"></i> 0 day streak</span>
+          </div>
+
+          <div class="mood-top-grid">
+            <article class="card mood-pick-card">
+              <header class="card-head">
+                <div><p class="card-kicker">Right now</p><h3>Choose the closest feeling</h3></div>
+              </header>
+              <div class="mood-options" id="moodOptions" role="group" aria-label="Mood levels"></div>
+              <div class="mood-submit-row">
+                <p class="mood-hint" id="moodHint">Select a mood to save today's check-in.</p>
+                <button class="btn btn-primary" id="moodSubmit" type="button" disabled><i data-lucide="check"></i> Save mood</button>
+              </div>
+            </article>
+
+            <article class="card current-mood-card">
+              <p class="card-kicker">Current mood</p>
+              <div class="current-mood-display">
+                <span id="currentMoodEmoji" class="current-mood-emoji">🌱</span>
+                <div>
+                  <h3 id="currentMoodLabel">No check-in yet</h3>
+                  <p id="currentMoodTime">Your first check-in is a small act of care.</p>
+                </div>
+              </div>
+              <div class="mini-stat-row">
+                <div><strong id="moodAverage">—</strong><span>7-entry average</span></div>
+                <div><strong id="moodCheckins">0</strong><span>check-ins</span></div>
+                <div><strong id="moodBestDay">—</strong><span>best day</span></div>
+              </div>
+              <p class="current-mood-insight" id="currentMoodInsight">There is no perfect way to feel.</p>
+            </article>
+          </div>
+
+          <article class="card chart-card mood-chart-card">
+            <header class="card-head chart-head">
+              <div><p class="card-kicker">Your pattern</p><h3>Mood over time</h3></div>
+              <div class="segmented" id="moodRange" role="group" aria-label="Chart range">
+                <button type="button" data-range="7" class="active">7 entries</button>
+                <button type="button" data-range="30">30 entries</button>
+                <button type="button" data-range="all">All</button>
+              </div>
+            </header>
+            <div class="chart-wrap chart-wrap-mood">
+              <canvas id="moodChart" aria-label="Mood history chart"></canvas>
+              <div class="chart-empty" id="moodChartEmpty" hidden>
+                <span class="chart-empty-emoji">💜</span>
+                <p>No mood data yet. Your first check-in will start the graph.</p>
+                <button class="btn btn-soft btn-sm" id="moodEmptyAction" type="button">Choose a mood above</button>
+              </div>
+            </div>
+            <p class="chart-insight" id="moodInsight">Log a mood to see your pattern.</p>
+          </article>
+
+          <article class="card mood-history-card">
+            <header class="card-head">
+              <div><p class="card-kicker">Recent check-ins</p><h3>Mood history</h3></div>
+              <button class="btn btn-ghost btn-sm" id="moodRefreshBtn" type="button"><i data-lucide="refresh-cw"></i> Refresh</button>
+            </header>
+            <div id="moodHistory" class="mood-history-list"></div>
+            <button class="btn btn-ghost btn-full" id="moodShowMore" type="button" hidden>Show more check-ins</button>
+          </article>
+        </section>
+
+        <!-- ───────────────────────── Self-care ───────────────────────── -->
+        <section class="view" id="view-selfcare" data-view="selfcare" hidden>
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Self-care</p>
+              <h2>A small kindness for yourself.</h2>
+              <p>Seven tiny reminders for your body, your attention, and your nervous system. Keep the ones that help.</p>
+            </div>
+            <button class="btn btn-primary" id="newReminderBtn" type="button"><i data-lucide="sparkles"></i> New reminder</button>
+          </div>
+
+          <div class="selfcare-grid">
+            <article class="care-hero-card">
+              <div class="care-hero-glow" aria-hidden="true"></div>
+              <div class="care-hero-inner">
+                <span class="care-hero-emoji" id="careHeroEmoji">💜</span>
+                <p class="care-hero-kicker" id="careHeroKicker">A moment for you</p>
+                <h3 id="careHeroText">Take three deep breaths.</h3>
+                <p id="careHeroMeta">Self-care isn't a reward. It's maintenance.</p>
+                <button class="btn btn-white" id="careHeroButton" type="button"><i data-lucide="refresh-cw"></i> Give me another</button>
+              </div>
+              <div class="care-hero-note">
+                <i data-lucide="bell"></i>
+                <span id="careNotificationStatus">Browser reminders are off. Turn them on in Settings.</span>
+              </div>
+            </article>
+
+            <article class="card care-catalog-card">
+              <header class="card-head">
+                <div><p class="card-kicker">The little things</p><h3>Self-care menu</h3></div>
+                <span class="soft-badge"><i data-lucide="leaf"></i> 7 ideas</span>
+              </header>
+              <div class="care-catalog" id="careCatalog"></div>
+            </article>
+
+            <article class="card care-history-card">
+              <header class="card-head">
+                <div><p class="card-kicker">Your moments</p><h3>Reminder history</h3></div>
+                <button class="btn btn-ghost btn-sm" id="clearReminderHistory" type="button"><i data-lucide="trash-2"></i> Clear</button>
+              </header>
+              <div id="reminderHistory" class="reminder-history"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ───────────────────────── History ───────────────────────── -->
+        <section class="view" id="view-history" data-view="history" hidden>
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Conversation history</p>
+              <h2>Everything you've talked through.</h2>
+              <p>Pick up a thread, revisit a realisation, or clear what no longer needs to stay.</p>
+            </div>
+            <button class="btn btn-primary" id="historyNewChat" type="button"><i data-lucide="plus"></i> New conversation</button>
+          </div>
+
+          <div class="history-toolbar card">
+            <label class="search-field">
+              <i data-lucide="search" aria-hidden="true"></i>
+              <input type="search" id="historySearch" placeholder="Search conversations and messages..." autocomplete="off" aria-label="Search conversations" />
+            </label>
+            <label class="select-field">
+              <span>Sort</span>
+              <select id="historySort" aria-label="Sort conversations">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="title">Title A–Z</option>
+              </select>
+            </label>
+            <button class="btn btn-ghost btn-sm" id="historyRefresh" type="button"><i data-lucide="refresh-cw"></i> Refresh</button>
+          </div>
+
+          <div id="historyList" class="history-list"></div>
+          <div id="historyEmpty" class="empty-card" hidden>
+            <span class="empty-icon">🕊️</span>
+            <h3>No conversations yet</h3>
+            <p>When you talk with MindMate, your conversations will live here — private and persistent.</p>
+            <button class="btn btn-primary" id="historyEmptyNew" type="button"><i data-lucide="message-circle"></i> Start a conversation</button>
+          </div>
+        </section>
+
+        <!-- ───────────────────────── Memories ───────────────────────── -->
+        <section class="view" id="view-memories" data-view="memories" hidden>
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Emotional memories</p>
+              <h2>The context you've chosen to keep.</h2>
+              <p>MindMate remembers meaningful feelings and concerns so it can follow up gently. Nothing is permanent — you are always in control.</p>
+            </div>
+            <div class="section-head-actions">
+              <button class="btn btn-ghost" id="addMemoryBtn" type="button"><i data-lucide="plus"></i> Add a memory</button>
+              <button class="btn btn-primary" id="saveMemoryPrefBtn" type="button"><i data-lucide="brain"></i> Memory is on</button>
+            </div>
+          </div>
+
+          <div class="memory-banner card" id="memoryBanner">
+            <span class="memory-banner-icon"><i data-lucide="shield-check"></i></span>
+            <div><strong>Memory is under your control.</strong><p>It remembers up to 50 active emotional notes, never stores passwords or sensitive identifiers, and can be paused or cleared at any moment.</p></div>
+          </div>
+
+          <div class="memory-stats">
+            <article class="stat-card"><span class="stat-icon memory"><i data-lucide="sparkles"></i></span><div><p class="stat-label">Active memories</p><strong class="stat-value" id="memoryActiveCount">0</strong><span class="stat-note">Used for gentle recall</span></div></article>
+            <article class="stat-card"><span class="stat-icon check"><i data-lucide="check-check"></i></span><div><p class="stat-label">Resolved</p><strong class="stat-value" id="memoryResolvedCount">0</strong><span class="stat-note">Kept for your history</span></div></article>
+            <article class="stat-card"><span class="stat-icon chat"><i data-lucide="quote"></i></span><div><p class="stat-label">How recall works</p><strong class="stat-value stat-value-sm">Only when relevant</strong><span class="stat-note">Not a transcript replay</span></div></article>
+          </div>
+
+          <div class="memory-toolbar card">
+            <label class="search-field">
+              <i data-lucide="search" aria-hidden="true"></i>
+              <input type="search" id="memorySearch" placeholder="Search what you've shared..." autocomplete="off" aria-label="Search memories" />
+            </label>
+            <button class="btn btn-ghost btn-sm" id="clearResolvedBtn" type="button"><i data-lucide="check-check"></i> Clear resolved</button>
+            <button class="btn btn-danger-ghost btn-sm" id="clearAllMemoriesBtn" type="button"><i data-lucide="trash-2"></i> Clear all</button>
+          </div>
+
+          <div class="card memory-list-card">
+            <header class="card-head"><div><p class="card-kicker">In mind</p><h3>Active memories</h3></div><span class="soft-badge" id="activeMemoryBadge">0</span></header>
+            <div id="memoryList" class="memory-list"></div>
+          </div>
+
+          <div class="card memory-list-card resolved-card">
+            <header class="card-head"><div><p class="card-kicker">Made peace with</p><h3>Resolved memories</h3></div><span class="soft-badge" id="resolvedMemoryBadge">0</span></header>
+            <div id="resolvedMemoryList" class="memory-list"></div>
+          </div>
+        </section>
+
+        <!-- ───────────────────────── Settings ───────────────────────── -->
+        <section class="view" id="view-settings" data-view="settings" hidden>
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Settings</p>
+              <h2>Make MindMate yours.</h2>
+              <p>Preferences, privacy, and the local AI connection — all in one place.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <article class="card settings-card">
+              <header class="card-head"><div><p class="card-kicker">Profile</p><h3>How should MindMate address you?</h3></div></header>
+              <form id="profileForm" class="settings-form">
+                <label class="field">
+                  <span>Display name</span>
+                  <input type="text" id="settingsName" maxlength="40" placeholder="Friend" autocomplete="nickname" />
+                  <small>A first name or nickname is plenty.</small>
+                </label>
+                <div class="field">
+                  <span>Appearance</span>
+                  <div class="theme-options" role="group" aria-label="Colour theme">
+                    <button type="button" data-theme-option="light"><i data-lucide="sun"></i> Light</button>
+                    <button type="button" data-theme-option="dark"><i data-lucide="moon"></i> Dark</button>
+                    <button type="button" data-theme-option="system"><i data-lucide="monitor"></i> System</button>
+                  </div>
+                </div>
+                <div class="toggle-list">
+                  <label class="toggle-row">
+                    <span><strong>Emotional memory</strong><small>Let MindMate recall meaningful context between chats.</small></span>
+                    <input type="checkbox" id="settingsMemory" class="switch" />
+                  </label>
+                  <label class="toggle-row">
+                    <span><strong>Browser reminders</strong><small>Show a gentle desktop notification for self-care reminders.</small></span>
+                    <input type="checkbox" id="settingsNotifications" class="switch" />
+                  </label>
+                  <label class="toggle-row">
+                    <span><strong>Reduce motion</strong><small>Limit decorative animation and transitions.</small></span>
+                    <input type="checkbox" id="settingsMotion" class="switch" />
+                  </label>
+                </div>
+                <button class="btn btn-primary" type="submit" id="saveSettingsBtn"><i data-lucide="check"></i> Save preferences</button>
+              </form>
+            </article>
+
+            <article class="card settings-card">
+              <header class="card-head">
+                <div><p class="card-kicker">Local AI</p><h3>Ollama connection</h3></div>
+                <button class="icon-btn icon-btn-sm" id="refreshHealthBtn" type="button" aria-label="Refresh AI status" title="Refresh"><i data-lucide="refresh-cw"></i></button>
+              </header>
+              <div class="connection-card" id="connectionCard">
+                <span class="connection-dot" id="connectionDot"></span>
+                <div><strong id="connectionTitle">Checking connection…</strong><p id="connectionText">Looking for your local Ollama server.</p></div>
+              </div>
+              <dl class="detail-list">
+                <div><dt>Model</dt><dd id="settingsModel">phi-mindmate</dd></div>
+                <div><dt>Vector search</dt><dd id="settingsVector">Local lexical</dd></div>
+                <div><dt>Knowledge notes</dt><dd id="settingsDocs">0</dd></div>
+                <div><dt>Privacy</dt><dd>Nothing leaves this device</dd></div>
+              </dl>
+              <div class="help-note">
+                <strong>To connect the original model</strong>
+                <code>ollama serve</code>
+                <code>ollama pull phi-mindmate</code>
+                <p>MindMate still works without AI: mood tracking, history, memories, and reminders are fully local.</p>
+              </div>
+            </article>
+
+            <article class="card settings-card">
+              <header class="card-head"><div><p class="card-kicker">Your data</p><h3>Privacy &amp; control</h3></div></header>
+              <div class="data-list">
+                <div class="data-row"><div><strong>Export everything</strong><p>Download conversations, moods, reminders, memories, and preferences as JSON.</p></div><button class="btn btn-soft btn-sm" id="exportDataBtn" type="button"><i data-lucide="download"></i> Export</button></div>
+                <div class="data-row"><div><strong>Clear conversations</strong><p>Remove all chat history. Moods and memories stay.</p></div><button class="btn btn-danger-ghost btn-sm" data-reset="conversations" type="button">Clear</button></div>
+                <div class="data-row"><div><strong>Clear mood history</strong><p>Delete every mood check-in and reset the graph.</p></div><button class="btn btn-danger-ghost btn-sm" data-reset="mood" type="button">Clear</button></div>
+                <div class="data-row"><div><strong>Clear reminders</strong><p>Remove all saved self-care reminders.</p></div><button class="btn btn-danger-ghost btn-sm" data-reset="reminders" type="button">Clear</button></div>
+                <div class="data-row"><div><strong>Reset preferences</strong><p>Restore name, theme, and toggles to defaults.</p></div><button class="btn btn-danger-ghost btn-sm" data-reset="settings" type="button">Reset</button></div>
+                <div class="data-row data-row-danger"><div><strong>Erase all wellness data</strong><p>Deletes conversations, moods, memories, and reminders. A backup is made first.</p></div><button class="btn btn-danger btn-sm" data-reset="all" type="button"><i data-lucide="trash-2"></i> Erase</button></div>
+              </div>
+            </article>
+
+            <article class="card settings-card about-card">
+              <header class="card-head"><div><p class="card-kicker">About</p><h3>MindMate AI</h3></div><span class="soft-badge">v1.0.0</span></header>
+              <p>Rebuilt in vanilla JavaScript from the original MindMate AI Streamlit project, preserving its Purple wellness identity, five-level mood tracker, emotional memory, self-care reminders, and <code>phi-mindmate</code> Ollama model.</p>
+              <p class="fine-print" id="settingsDisclaimer">MindMate is a supportive wellness companion, not a licensed therapist or a substitute for professional care.</p>
+              <div class="about-actions">
+                <button class="btn btn-ghost btn-sm" id="aboutSupportBtn" type="button"><i data-lucide="life-buoy"></i> Crisis resources</button>
+                <a class="btn btn-ghost btn-sm" href="#/memories"><i data-lucide="brain"></i> Manage memory</a>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot" class="toast-stack" role="status" aria-live="polite"></div>
+
+  <script src="/vendor/chart.umd.js"></script>
+  <script src="/vendor/lucide.min.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
