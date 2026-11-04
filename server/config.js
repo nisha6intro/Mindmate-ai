@@ -3,17 +3,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
-export const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const PROJECT_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..'
+);
+
 dotenv.config({ path: path.join(PROJECT_ROOT, '.env') });
 
 const resolveFromRoot = (value, fallback) => {
   const candidate = value && value.trim() ? value.trim() : fallback;
-  return path.isAbsolute(candidate) ? candidate : path.resolve(PROJECT_ROOT, candidate);
+  return path.isAbsolute(candidate)
+    ? candidate
+    : path.resolve(PROJECT_ROOT, candidate);
 };
 
 const bool = (value, fallback) => {
   if (value === undefined || value === '') return fallback;
-  return !['0', 'false', 'no', 'off'].includes(String(value).toLowerCase());
+  return !['0', 'false', 'no', 'off'].includes(
+    String(value).toLowerCase()
+  );
 };
 
 const int = (value, fallback) => {
@@ -21,11 +29,16 @@ const int = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-// On Vercel the deployment bundle is read-only; only /tmp is writable. Use it
-// automatically so a missing DATA_DIR does not break the first request.
-const defaultDataDir = process.env.VERCEL ? '/tmp/mindmate' : path.join(PROJECT_ROOT, 'data');
+// Data storage configuration
+const defaultDataDir = process.env.VERCEL
+  ? '/tmp/mindmate'
+  : path.join(PROJECT_ROOT, 'data');
 
-export const DATA_DIR = resolveFromRoot(process.env.DATA_DIR, defaultDataDir);
+export const DATA_DIR = resolveFromRoot(
+  process.env.DATA_DIR,
+  defaultDataDir
+);
+
 export const PUBLIC_DIR = path.join(PROJECT_ROOT, 'public');
 export const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 
@@ -34,18 +47,44 @@ export const config = {
   publicDir: PUBLIC_DIR,
   dataDir: DATA_DIR,
   backupDir: BACKUP_DIR,
+
+  // Server configuration
   host: process.env.HOST || '127.0.0.1',
   port: int(process.env.PORT, 3000),
   env: process.env.NODE_ENV || 'development',
-  isTest: process.env.NODE_ENV === 'test' || process.env.MINDMATE_TEST === '1',
+  isTest:
+    process.env.NODE_ENV === 'test' ||
+    process.env.MINDMATE_TEST === '1',
+
+  // Application settings
   seedLegacy: bool(process.env.SEED_LEGACY, true),
-  maxContextMessages: Math.max(4, int(process.env.MAX_CONTEXT_MESSAGES, 12)),
+  maxContextMessages: Math.max(
+    4,
+    int(process.env.MAX_CONTEXT_MESSAGES, 12)
+  ),
+
+  // Ollama configuration
   ollama: {
-    baseUrl: (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/+$/, ''),
+    baseUrl: (
+      process.env.OLLAMA_BASE_URL ||
+      'http://127.0.0.1:11434'
+    ).replace(/\/+$/, ''),
+
+    // API key stays on the backend
+    apiKey: process.env.OLLAMA_API_KEY || '',
+
     model: process.env.OLLAMA_MODEL || 'phi-mindmate',
-    embedModel: process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text',
-    timeoutMs: Math.max(5000, int(process.env.OLLAMA_TIMEOUT_MS, 60000)),
+
+    embedModel:
+      process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text',
+
+    timeoutMs: Math.max(
+      5000,
+      int(process.env.OLLAMA_TIMEOUT_MS, 60000)
+    ),
   },
+
+  // Application data files
   files: {
     conversations: path.join(DATA_DIR, 'conversations.json'),
     memory: path.join(DATA_DIR, 'memory.json'),
@@ -59,7 +98,11 @@ export const config = {
 };
 
 export function ensureDataDirs() {
-  for (const dir of [config.dataDir, config.backupDir, config.files.legacy]) {
+  for (const dir of [
+    config.dataDir,
+    config.backupDir,
+    config.files.legacy,
+  ]) {
     fs.mkdirSync(dir, { recursive: true });
   }
 }
