@@ -1,7 +1,7 @@
 import express from 'express';
 import { config } from '../config.js';
 import { CRISIS_RESOURCES } from '../constants.js';
-import { asyncHandler, ApiError, integer, text, recordBody } from '../utils/validate.js';
+import { asyncHandler, ApiError, integer, optionalText, text, recordBody } from '../utils/validate.js';
 import { rateLimit } from '../utils/rateLimit.js';
 import { titleFromMessage } from '../utils/text.js';
 import {
@@ -36,12 +36,16 @@ function startStream(req, res, signalController) {
   res.flushHeaders?.();
 
   let closed = false;
-  res.on('close', () => {
+  const noteClosed = () => {
     if (!res.writableEnded) {
       closed = true;
       signalController.abort();
     }
-  });
+  };
+  res.on('close', noteClosed);
+  // Some browsers stop reading without closing the response immediately.
+  // `req` emits `aborted` as soon as the client cancels, which keeps rollback prompt.
+  req.on('aborted', noteClosed);
 
   return {
     send(event) {
@@ -86,6 +90,7 @@ router.post(
     const body = recordBody(req.body);
     const message = text(body.message, { field: 'message', min: 1, max: 4000 });
     const requestedId = body.conversationId ? String(body.conversationId).slice(0, 80) : null;
+    const turnId = optionalText(body.turnId, { field: 'turnId', max: 80 }) || null;
     const suppliedMood = body.moodLevel === undefined ? null : integer(body.moodLevel, { field: 'moodLevel', min: 1, max: 5 });
 
     const settings = await getSettings();
@@ -112,7 +117,7 @@ router.post(
       const userMessage = await appendMessage(conversation.id, {
         role: 'user',
         content: message,
-        meta: { moodLevel: currentLevel, safety: true },
+        meta: { moodLevel: currentLevel, safety: true, turnId },
       });
       if (settings.memoryEnabled) {
         try {
@@ -140,6 +145,7 @@ router.post(
         conversation: refreshed ? summarize(refreshed) : null,
         userMessage,
         tone,
+        turnId,
         recalled: recalled.map((item) => ({ id: item.id, text: item.text })),
         followUp: 'Are you safe right now?',
         safety: payload.safety,
@@ -190,7 +196,7 @@ router.post(
       const userMessage = await appendMessage(conversation.id, {
         role: 'user',
         content: message,
-        meta: { moodLevel: currentLevel },
+        meta: { moodLevel: currentLevel, turnId },
       });
 
       const stream = startStream(req, res, controller);
@@ -202,6 +208,7 @@ router.post(
         userMessage,
         assistantMessageId: null,
         tone,
+        turnId,
         recalled: recalled.map((item) => ({ id: item.id, text: item.text })),
         followUp,
         safety: null,
@@ -228,6 +235,16 @@ router.post(
           if (check && check.messages.length === 0) await deleteConversation(conversation.id).catch(() => {});
         }
         stream.end();
+        return;
+      }
+
+      // The reader left before the reply was complete: leave no half-turn behind.
+      if (stream.isClosed()) {
+        await removeMessages(conversation.id, [userMessage.id]).catch(() => {});
+        if (createdNow) {
+          const check = await getConversation(conversation.id).catch(() => null);
+          if (check && check.messages.length === 0) await deleteConversation(conversation.id).catch(() => {});
+        }
         return;
       }
 

@@ -204,7 +204,10 @@ function renderFinishedReply({ assistantEl, message, conversation, followUp, fal
   const content = String(message?.content || fallbackContent || '');
   bubble.innerHTML = content ? renderMarkdown(content) : TYPING;
   const crisis = message?.meta?.safety || message?.meta?.override === 'crisis';
-  if (crisis) bubble.classList.add('is-crisis');
+  if (crisis) {
+    bubble.classList.add('is-crisis');
+    insertSafetyBanner(assistantEl);
+  }
   assistantEl.removeAttribute('data-streaming');
   if (message?.id) assistantEl.dataset.messageId = message.id;
   const metaRow = assistantEl.querySelector('.message-meta');
@@ -220,10 +223,17 @@ function renderFinishedReply({ assistantEl, message, conversation, followUp, fal
   );
   if (conversation) {
     state.conversation = { ...(state.conversation || {}), ...conversation };
+    if (conversation.id) {
+      state.activeId = conversation.id;
+      store.set({ currentConversationId: conversation.id }, 'conversation');
+    }
     setTitle(conversation.title || 'Conversation');
     const sub = $('#chatSubtitle');
-    if (sub) {
-      sub.textContent = `${conversation.messageCount} message${conversation.messageCount === 1 ? '' : 's'} · stored privately on this device`;
+    const count = Number.isFinite(conversation.messageCount)
+      ? conversation.messageCount
+      : Array.isArray(conversation.messages) ? conversation.messages.length : null;
+    if (sub && count !== null) {
+      sub.textContent = `${count} message${count === 1 ? '' : 's'} · stored privately on this device`;
     }
   }
   if (followUp !== undefined) setFollowUp(followUp || null);
@@ -236,21 +246,91 @@ function renderFinishedReply({ assistantEl, message, conversation, followUp, fal
 /**
  * A very fast reply can finish on the server a moment before the browser's
  * abort reaches it. Ask the server what it stored so the interface never
- * claims a reply was lost when it was actually saved.
+ * claims a reply was lost when it was actually saved. The turn id travels with
+ * the request, so it still identifies the turn when the abort lands before the
+ * first stream event.
  */
-async function reconcileStoppedReply({ meta, assistantEl, fallbackContent }) {
-  if (!meta?.conversationId) return false;
+async function findStoredReply({ meta, turnId }) {
+  const ids = [];
+  if (meta?.conversationId) ids.push(meta.conversationId);
+  else if (state.activeId) ids.push(state.activeId);
+  if (!ids.length) {
+    try {
+      const list = await api.conversations.list({ limit: 5 });
+      for (const item of list.conversations) if (!ids.includes(item.id)) ids.push(item.id);
+    } catch {
+      // Fall through to the per-conversation attempts below.
+    }
+  }
+
+  for (const id of ids) {
+    try {
+      const { conversation } = await api.conversations.get(id);
+      const index = conversation.messages.findIndex(
+        (item) => item.role === 'user' && (item.id === meta?.userMessage?.id || (turnId && item.meta?.turnId === turnId)),
+      );
+      if (index === -1) continue;
+      const saved = conversation.messages
+        .slice(index + 1)
+        .find((item) => item.role === 'assistant' && String(item.content || '').trim());
+      if (saved) return { conversation, saved };
+    } catch {
+      // Try the next candidate; a missing conversation is not an error here.
+    }
+  }
+  return null;
+}
+
+async function reconcileStoppedReply({ meta, assistantEl, fallbackContent, turnId }) {
+  // The abort can reach the browser before the server has finished writing its
+  // final turn. Give the store a short, bounded moment to settle so we do not
+  // report a reply as lost when it is about to be saved.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const found = await findStoredReply({ meta, turnId });
+    if (found?.saved) {
+      renderFinishedReply({
+        assistantEl,
+        message: found.saved,
+        conversation: found.conversation,
+        followUp: meta?.followUp,
+        fallbackContent,
+      });
+      toast('info', 'Reply already complete', 'MindMate finished just before you stopped.');
+      return true;
+    }
+    if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+/**
+ * An aborted turn is rolled back by the server. If it was a brand-new
+ * conversation, that conversation disappears too, so clear the stale id and
+ * refresh the rail instead of leaving a link that returns 404.
+ */
+async function syncStoppedTurn({ meta, wasNew }) {
+  const candidate = meta?.conversationId || state.activeId;
+  const resetActive = () => {
+    state.activeId = null;
+    state.conversation = null;
+    store.set({ currentConversationId: null }, 'conversation');
+    setTitle('New conversation');
+    setChatTitleSubtitle();
+    markActiveRail();
+  };
+
+  if (wasNew && candidate && state.activeId === candidate) resetActive();
+
   try {
-    const { conversation } = await api.conversations.get(meta.conversationId);
-    const userIndex = conversation.messages.findIndex((item) => item.id === meta.userMessage?.id);
-    const after = userIndex === -1 ? conversation.messages : conversation.messages.slice(userIndex + 1);
-    const saved = after.find((item) => item.role === 'assistant' && String(item.content || '').trim());
-    if (!saved) return false;
-    renderFinishedReply({ assistantEl, message: saved, conversation, followUp: meta.followUp, fallbackContent });
-    toast('info', 'Reply already complete', 'MindMate finished just before you stopped.');
-    return true;
+    const list = await api.conversations.list({ limit: 200 });
+    if (candidate && state.activeId === candidate && !list.conversations.some((item) => item.id === candidate)) {
+      resetActive();
+    }
+    renderSidebarConversations(list.conversations);
+    await loadRail();
   } catch {
-    return false;
+    await refreshConversationLists();
+    await loadRail();
   }
 }
 
@@ -493,6 +573,7 @@ async function sendMessage(rawText, { retry = false, userEl = null } = {}) {
   state.lastUserEl = bubbleUser;
 
   state.controller = new AbortController();
+  const turnId = globalThis.crypto?.randomUUID?.() || `turn_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   setStreaming(true);
   const assistantEl = appendAssistantPlaceholder();
   const bubble = assistantEl.querySelector('.message-bubble');
@@ -513,6 +594,7 @@ async function sendMessage(rawText, { retry = false, userEl = null } = {}) {
       message: text,
       conversationId: state.activeId,
       moodLevel: state.moodLevel ?? undefined,
+      turnId,
       signal: state.controller.signal,
       onEvent(event) {
         if (event.type === 'meta') {
@@ -531,33 +613,13 @@ async function sendMessage(rawText, { retry = false, userEl = null } = {}) {
         } else if (event.type === 'done') {
           content = event.message?.content || content;
           if (frame) cancelAnimationFrame(frame);
-          paint();
-          const crisis = event.message?.meta?.safety || event.message?.meta?.override === 'crisis';
-          if (crisis && bubble) bubble.classList.add('is-crisis');
-          if (event.safety) insertSafetyBanner(assistantEl);
-          assistantEl.removeAttribute('data-streaming');
-          if (event.message?.id) assistantEl.dataset.messageId = event.message.id;
-          if (event.message?.createdAt) {
-            assistantEl.querySelector('.message-meta')?.insertAdjacentHTML(
-              'beforeend',
-              `<time datetime="${escapeHtml(event.message.createdAt)}">${escapeHtml(formatTime(event.message.createdAt))}</time>`,
-            );
-          }
-          assistantEl.querySelector('.message-meta')?.insertAdjacentHTML(
-            'beforeend',
-            `<span class="message-model">${escapeHtml(event.message?.meta?.model || 'phi-mindmate')}</span>`,
-          );
-          if (event.conversation) {
-            state.conversation = { ...(state.conversation || {}), ...event.conversation };
-            setTitle(event.conversation.title || 'Conversation');
-            const sub = $('#chatSubtitle');
-            if (sub) {
-              sub.textContent = `${event.conversation.messageCount} message${event.conversation.messageCount === 1 ? '' : 's'} · stored privately on this device`;
-            }
-          }
-          setFollowUp(event.followUp || null);
-          refreshConversationLists();
-          loadRail();
+          renderFinishedReply({
+            assistantEl,
+            message: event.message,
+            conversation: event.conversation,
+            followUp: event.followUp,
+            fallbackContent: content,
+          });
           if (event.memory?.added) toast('info', 'Noted gently', 'MindMate will remember this for future check-ins.');
           if (event.memory?.resolved) toast('success', 'Marked as resolved', `${event.memory.resolved} memory note${event.memory.resolved === 1 ? '' : 's'} moved to resolved.`);
         } else if (event.type === 'error') {
@@ -581,15 +643,29 @@ async function sendMessage(rawText, { retry = false, userEl = null } = {}) {
     }
   } catch (error) {
     if (error.name === 'AbortError') {
-      presentError({
-        title: 'Reply stopped',
-        message: 'You stopped this reply. Your message was not saved.',
-        hint: 'You can try again whenever you are ready.',
-        retryable: true,
-        text,
-        userEl: bubbleUser,
-        assistantEl,
-      });
+      const recovered = await reconcileStoppedReply({ meta, assistantEl, fallbackContent: content, turnId });
+      if (!recovered) {
+        const wasNew = meta?.conversation?.messageCount === 1;
+        presentError({
+          title: 'Reply stopped',
+          message: 'You stopped this reply. Your message was not saved.',
+          hint: 'You can try again whenever you are ready.',
+          retryable: true,
+          text,
+          userEl: bubbleUser,
+          assistantEl,
+        });
+        // Wait briefly for the server's rollback, then tidy the rail so a
+        // discarded conversation is not left behind as a dead link.
+        const candidate = meta?.conversationId || state.activeId;
+        const settle = () => {
+          if (state.streaming) return;
+          if (state.activeId && candidate && state.activeId !== candidate) return;
+          syncStoppedTurn({ meta, wasNew });
+        };
+        setTimeout(settle, 700);
+        setTimeout(settle, 2200);
+      }
     } else {
       presentError({
         title: 'Connection interrupted',

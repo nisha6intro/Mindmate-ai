@@ -21,7 +21,11 @@ const int = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-export const DATA_DIR = resolveFromRoot(process.env.DATA_DIR, path.join(PROJECT_ROOT, 'data'));
+// On Vercel the deployment bundle is read-only; only /tmp is writable. Use it
+// automatically so a missing DATA_DIR does not break the first request.
+const defaultDataDir = process.env.VERCEL ? '/tmp/mindmate' : path.join(PROJECT_ROOT, 'data');
+
+export const DATA_DIR = resolveFromRoot(process.env.DATA_DIR, defaultDataDir);
 export const PUBLIC_DIR = path.join(PROJECT_ROOT, 'public');
 export const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 

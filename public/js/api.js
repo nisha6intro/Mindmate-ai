@@ -129,10 +129,11 @@ export function downloadExport() {
  * Rejects with ApiError for transport/protocol failures. A server-sent
  * `error` event is delivered through onEvent and ends the stream.
  */
-export async function streamChat({ message, conversationId = null, moodLevel = null, signal, onEvent }) {
+export async function streamChat({ message, conversationId = null, moodLevel = null, turnId = null, signal, onEvent }) {
   const body = { message };
   if (conversationId) body.conversationId = conversationId;
   if (Number.isInteger(moodLevel)) body.moodLevel = moodLevel;
+  if (turnId) body.turnId = turnId;
 
   let response;
   try {

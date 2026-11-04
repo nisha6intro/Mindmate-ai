@@ -858,16 +858,6 @@
       "legacy": true,
       "source": "chat_logs/chat_2025-06-13.json",
       "importedAt": "2026-11-01T11:50:55.647Z"
-    },
-    {
-      "id": "conv_mvxsf7lj_57091f0128",
-      "title": "New conversation",
-      "createdAt": "2026-11-01T12:09:45.271Z",
-      "updatedAt": "2026-11-01T12:09:45.271Z",
-      "messages": [],
-      "legacy": false,
-      "source": null,
-      "importedAt": null
     }
   ]
 }
